@@ -57,3 +57,19 @@ async def disconnect(sid):
     """Remove o jogador desconectado do dicionário de sessão."""
     jogadores.pop(sid, None)
 
+@sio.on("construcao.solicitada")
+async def construir(sid, dados=None):
+    """Escuta o pedido de construção de um jogador e inicia a obra na vinícola."""
+    pedido = "construcao.solicitada"
+    indice_obra = estado["concluidas"] + estado["em_obra"]
+    estrutura = TIPOS_CONSTRUCAO[indice_obra % len(TIPOS_CONSTRUCAO)]
+
+    estado["uvas"] -= CUSTO
+    estado["trabalhadores"] += 1
+    estado["em_obra"] += 1
+    nome = jogadores.get(sid, {}).get("nome", "Anônimo")
+
+    # Emite o fato construcao.iniciada para todos os jogadores
+    await sio.emit("construcao.iniciada", fato(pedido, por=nome, estrutura=estrutura))
+
+

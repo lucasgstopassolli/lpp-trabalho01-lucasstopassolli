@@ -246,9 +246,6 @@
 </script>
 
 <script>
-  // =====================================================================
-  //  A APLICAÇÃO (Vue + Socket.IO) - é aqui que você trabalha.
-  // =====================================================================
   const { createApp, ref, reactive, computed, nextTick } = Vue;
 
   createApp({
@@ -323,7 +320,13 @@
           jogo.mostrarEstado(d.estado);
         });
         // ETAPA 2: ouvir "vila.iniciada"         -> jogo.vilaIniciada()
-        // ETAPA 3: ouvir "construcao.iniciada"   -> jogo.obraIniciada(...)
+        // ETAPA 3: Escuta o fato de que uma nova construção foi iniciada na vinícola
+        ouvir("construcao.iniciada", "mostra o canteiro de obras e debita uvas", (d) => {
+          atualizar(d);
+          const tipo = d.estrutura || "estrutura";
+          avisar(d.por + " iniciou a obra de um(a) " + tipo);
+          jogo.obraIniciada(d.estado);
+        });
         // ETAPA 4: ouvir "operacao.recusada"     -> jogo.recusado(...)
         // ETAPA 5: ouvir "recurso.produzido"     -> jogo.recursoProduzido(...)
         //          e "construcao.concluida"      -> jogo.obraConcluida(...)
@@ -336,7 +339,8 @@
         // ETAPA 2: pedir "vila.abertura_solicitada"
       }
       function construir() {
-        // ETAPA 3: pedir "construcao.solicitada"
+        // ETAPA 3: Emite o pedido do jogador ao servidor para construir na vinícola
+        pedir("construcao.solicitada");
       }
       function encerrarVila() {
         // ETAPA 6: pedir "vila.encerramento_solicitado"
