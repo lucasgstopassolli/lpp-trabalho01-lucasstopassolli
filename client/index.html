@@ -317,7 +317,11 @@
 
         // ===== ESCUTAS (on): o cliente reage aos FATOS do servidor =====
         // ouvir(evento, "o que o cliente faz ao receber", função)
-        // ETAPA 1: ouvir "estado.sincronizado"   -> jogo.mostrarEstado(...)
+        // ETAPA 1: Escuta a sincronização inicial enviada pelo servidor ao conectar
+        ouvir("estado.sincronizado", "guarda o estado e desenha a vinícola", (d) => {
+          atualizar(d);
+          jogo.mostrarEstado(d.estado);
+        });
         // ETAPA 2: ouvir "vila.iniciada"         -> jogo.vilaIniciada()
         // ETAPA 3: ouvir "construcao.iniciada"   -> jogo.obraIniciada(...)
         // ETAPA 4: ouvir "operacao.recusada"     -> jogo.recusado(...)
