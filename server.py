@@ -59,8 +59,25 @@ async def disconnect(sid):
 
 @sio.on("construcao.solicitada")
 async def construir(sid, dados=None):
-    """Escuta o pedido de construção de um jogador e inicia a obra na vinícola."""
+    """Escuta o pedido de construção, valida regras atomicamente e emite construcao.iniciada ou operacao.recusada."""
     pedido = "construcao.solicitada"
+
+    # Validação atômica ANTES de alterar o estado e sem await intermediário:
+    # garante que dois pedidos simultâneos sejam decididos um por vez sem condição de corrida.
+    if estado["fase"] != "aberta":
+        motivo = "A temporada não está aberta"
+    elif estado["uvas"] < CUSTO:
+        motivo = "Uvas insuficientes (necessário 50 uvas)"
+    elif estado["trabalhadores"] >= estado["limite"]:
+        motivo = "Sem vindimador livre no momento"
+    else:
+        motivo = None
+
+    if motivo:
+        # Emite a recusa exclusivamente para o cliente que fez o pedido (to=sid)
+        await recusar(sid, motivo, pedido)
+        return
+
     indice_obra = estado["concluidas"] + estado["em_obra"]
     estrutura = TIPOS_CONSTRUCAO[indice_obra % len(TIPOS_CONSTRUCAO)]
 
@@ -69,7 +86,7 @@ async def construir(sid, dados=None):
     estado["em_obra"] += 1
     nome = jogadores.get(sid, {}).get("nome", "Anônimo")
 
-    # Emite o fato construcao.iniciada para todos os jogadores
+    # Emite o fato construcao.iniciada para todos os clientes conectados
     await sio.emit("construcao.iniciada", fato(pedido, por=nome, estrutura=estrutura))
 
 

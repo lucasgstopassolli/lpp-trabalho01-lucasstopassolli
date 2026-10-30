@@ -327,7 +327,11 @@
           avisar(d.por + " iniciou a obra de um(a) " + tipo);
           jogo.obraIniciada(d.estado);
         });
-        // ETAPA 4: ouvir "operacao.recusada"     -> jogo.recusado(...)
+        // ETAPA 4: Escuta a recusa enviada pelo servidor apenas para quem fez um pedido inválido
+        ouvir("operacao.recusada", "avisa o motivo da recusa e treme a tela", (d) => {
+          avisar(d.motivo, "erro");
+          jogo.recusado(d.motivo);
+        });
         // ETAPA 5: ouvir "recurso.produzido"     -> jogo.recursoProduzido(...)
         //          e "construcao.concluida"      -> jogo.obraConcluida(...)
         // ETAPA 6: ouvir "vila.encerrada"        -> jogo.vilaEncerrada()
