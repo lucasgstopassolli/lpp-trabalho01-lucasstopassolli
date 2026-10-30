@@ -319,7 +319,12 @@
           atualizar(d);
           jogo.mostrarEstado(d.estado);
         });
-        // ETAPA 2: ouvir "vila.iniciada"         -> jogo.vilaIniciada()
+        // ETAPA 2: Escuta a confirmação do servidor de que o Mestre abriu a temporada
+        ouvir("vila.iniciada", "muda a faixa para temporada aberta", (d) => {
+          atualizar(d);
+          avisar("A temporada de vindima começou!", "ok");
+          jogo.vilaIniciada();
+        });
         // ETAPA 3: Escuta o fato de que uma nova construção foi iniciada na vinícola
         ouvir("construcao.iniciada", "mostra o canteiro de obras e debita uvas", (d) => {
           atualizar(d);
@@ -332,15 +337,40 @@
           avisar(d.motivo, "erro");
           jogo.recusado(d.motivo);
         });
-        // ETAPA 5: ouvir "recurso.produzido"     -> jogo.recursoProduzido(...)
-        //          e "construcao.concluida"      -> jogo.obraConcluida(...)
+        // ETAPA 5: Escuta a colheita automática de uvas gerada pelo temporizador do servidor
+        ouvir("recurso.produzido", "atualiza o estoque de uvas e mostra +N na vinícola", (d) => {
+          atualizar(d);
+          jogo.recursoProduzido(d.estado);
+        });
+
+        // ETAPA 5 (Tema Vinícola): Escuta o refino automático de uvas em vinho
+        ouvir("vinho.produzido", "atualiza o estoque de vinho refinado e mostra +N 🍷", (d) => {
+          atualizar(d);
+          jogo.vinhoProduzido(d.vinho_gerado || 1);
+        });
+
+        // ETAPA 5 (Tema Vinícola): Escuta a expiração quando a uva passa do ponto por excesso de estoque
+        ouvir("uva.expirada", "reduz uvas que passaram do ponto e alerta os jogadores", (d) => {
+          atualizar(d);
+          avisar("⚠️ " + d.perdidas + " uvas passaram do ponto por excesso no estoque!", "erro");
+          jogo.uvaExpirada(d.perdidas || 20);
+        });
+
+        // ETAPA 5: Escuta o término de uma obra pelo temporizador do servidor
+        ouvir("construcao.concluida", "transforma o canteiro em estrutura pronta e libera vindimador", (d) => {
+          atualizar(d);
+          const tipo = d.estrutura || "Obra";
+          avisar(tipo + " de " + d.por + " concluído(a)! Colheita e refino de vinho aumentaram.", "ok");
+          jogo.obraConcluida(d.estado);
+        });
         // ETAPA 6: ouvir "vila.encerrada"        -> jogo.vilaEncerrada()
       }
 
       // ===== PEDIDOS (emit): o cliente PEDE algo ao servidor =====
       // pedir(evento)
       function abrirVila() {
-        // ETAPA 2: pedir "vila.abertura_solicitada"
+        // ETAPA 2: Emite o pedido do Mestre ao servidor para abrir a temporada
+        pedir("vila.abertura_solicitada");
       }
       function construir() {
         // ETAPA 3: Emite o pedido do jogador ao servidor para construir na vinícola

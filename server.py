@@ -57,6 +57,74 @@ async def disconnect(sid):
     """Remove o jogador desconectado do dicionário de sessão."""
     jogadores.pop(sid, None)
 
+async def recusar(sid, motivo, causa):
+    """Emite operacao.recusada exclusivamente para o cliente que originou o pedido inválido."""
+    await sio.emit("operacao.recusada", {"motivo": motivo, "causa": causa}, to=sid)
+
+async def producao():
+    """Temporizador de produção: colhe uvas e refina vinho periodicamente enquanto a safra está aberta."""
+    while estado["fase"] == "aberta":
+        await sio.sleep(INTERVALO)
+        if estado["fase"] != "aberta":
+            break
+        # 1) Colheita do recurso primário (uvas)
+        estado["uvas"] += estado["producao"]
+        await sio.emit("recurso.produzido", fato("temporizador"))
+
+        # 2) Refino (uvas -> vinho) proporcional às construções concluídas (Lagar/Adega)
+        if estado["concluidas"] > 0:
+            custo_refino = estado["concluidas"] * 2
+            if estado["uvas"] >= custo_refino:
+                vinho_gerado = estado["concluidas"]
+                estado["uvas"] -= custo_refino
+                estado["vinho"] += vinho_gerado
+                await sio.emit(
+                    "vinho.produzido",
+                    fato("temporizador", vinho_gerado=vinho_gerado, uvas_consumidas=custo_refino),
+                )
+
+async def expiracao():
+    """Temporizador de perecibilidade: verifica se há excesso de uvas acumuladas passando do ponto."""
+    while estado["fase"] == "aberta":
+        await sio.sleep(INTERVALO_EXPIRA)
+        if estado["fase"] != "aberta":
+            break
+        if estado["uvas"] > LIMITE_PERECIVEL:
+            estado["uvas"] = max(0, estado["uvas"] - PERDA_EXPIRACAO)
+            await sio.emit(
+                "uva.expirada",
+                fato("temporizador", perdidas=PERDA_EXPIRACAO, motivo="uva passa do ponto"),
+            )
+
+async def obra(nome, estrutura):
+    """Temporizador de obra: conclui a estrutura após TEMPO_OBRA segundos e libera o vindimador."""
+    await sio.sleep(TEMPO_OBRA)
+    if estado["fase"] != "aberta":
+        return
+    estado["trabalhadores"] -= 1
+    estado["em_obra"] -= 1
+    estado["concluidas"] += 1
+    estado["producao"] += 5  # cada estrutura concluída amplia a produção de uvas
+    causa = "construcao.iniciada (temporizador)"
+    await sio.emit("construcao.concluida", fato(causa, por=nome, estrutura=estrutura))
+
+@sio.on("vila.abertura_solicitada")
+async def abrir_vila(sid, dados=None):
+    """Escuta o pedido do Mestre para iniciar a temporada da vinícola."""
+    pedido = "vila.abertura_solicitada"
+    if jogadores.get(sid, {}).get("papel") != "mestre":
+        await recusar(sid, "Só o Mestre pode abrir a temporada da vinícola", pedido)
+        return
+    if estado["fase"] != "aguardando":
+        await recusar(sid, "A temporada já foi aberta", pedido)
+        return
+
+    estado["fase"] = "aberta"
+    sio.start_background_task(producao)
+    sio.start_background_task(expiracao)
+    # Emite o fato vila.iniciada para todos os clientes conectados
+    await sio.emit("vila.iniciada", fato(pedido))
+
 @sio.on("construcao.solicitada")
 async def construir(sid, dados=None):
     """Escuta o pedido de construção, valida regras atomicamente e emite construcao.iniciada ou operacao.recusada."""
@@ -88,5 +156,6 @@ async def construir(sid, dados=None):
 
     # Emite o fato construcao.iniciada para todos os clientes conectados
     await sio.emit("construcao.iniciada", fato(pedido, por=nome, estrutura=estrutura))
+    sio.start_background_task(obra, nome, estrutura)
 
 
