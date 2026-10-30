@@ -363,7 +363,12 @@
           avisar(tipo + " de " + d.por + " concluído(a)! Colheita e refino de vinho aumentaram.", "ok");
           jogo.obraConcluida(d.estado);
         });
-        // ETAPA 6: ouvir "vila.encerrada"        -> jogo.vilaEncerrada()
+        // ETAPA 6: Escuta o encerramento da temporada e escurece a vinícola
+        ouvir("vila.encerrada", "escurece a vinícola e bloqueia novas ações", (d) => {
+          atualizar(d);
+          avisar("Temporada de vindima encerrada.");
+          jogo.vilaEncerrada();
+        });
       }
 
       // ===== PEDIDOS (emit): o cliente PEDE algo ao servidor =====
@@ -377,7 +382,8 @@
         pedir("construcao.solicitada");
       }
       function encerrarVila() {
-        // ETAPA 6: pedir "vila.encerramento_solicitado"
+        // ETAPA 6: Emite o pedido do Mestre ao servidor para encerrar a temporada
+        pedir("vila.encerramento_solicitado");
       }
 
       return { nome, papel, conectado, estado, avisos, eventosVisiveis, contadores, ocultarProducao, porMinuto,

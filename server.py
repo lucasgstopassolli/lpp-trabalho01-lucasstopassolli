@@ -158,4 +158,20 @@ async def construir(sid, dados=None):
     await sio.emit("construcao.iniciada", fato(pedido, por=nome, estrutura=estrutura))
     sio.start_background_task(obra, nome, estrutura)
 
+@sio.on("vila.encerramento_solicitado")
+async def encerrar_vila(sid, dados=None):
+    """Escuta o pedido do Mestre para encerrar a temporada e bloqueia novas ações."""
+    pedido = "vila.encerramento_solicitado"
+    if jogadores.get(sid, {}).get("papel") != "mestre":
+        await recusar(sid, "Só o Mestre pode encerrar a temporada", pedido)
+        return
+    if estado["fase"] != "aberta":
+        await recusar(sid, "A temporada não está aberta", pedido)
+        return
+
+    estado["fase"] = "encerrada"
+    # Emite o fato vila.encerrada para todos os clientes conectados
+    await sio.emit("vila.encerrada", fato(pedido))
+
+
 
