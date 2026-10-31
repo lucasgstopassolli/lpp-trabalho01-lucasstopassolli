@@ -88,3 +88,4 @@ Utilizei o assistente Gemini e o Antigravity CLI para estruturar o roteiro de im
 - **Cadeia produtiva completa de refino (`vinho.produzido`):** Conversão automática de uvas em vinho a cada ciclo proporcional ao número de estruturas concluídas (Parreiral, Lagar, Adega).
 - **Sistema de perecibilidade (`uva.expirada`):** Evento próprio disparado por temporizador quando o estoque acumula mais de 180 uvas sem uso, fazendo 20 uvas passarem do ponto.
 - **Contadores de eventos em tempo real (Etapa 7):** Chips no topo do Painel de Eventos contabilizando a ocorrência de cada evento na sessão.
+- **Interface Dark Mode Arcade:** Tema visual escuro personalizado com estética retrô/arcade, botões táteis estilo fliperama e painel de eventos inspirado em terminal HUD.
