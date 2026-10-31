@@ -23,71 +23,118 @@
       --err-red: #ff1744;
     }
 
+    * { box-sizing: border-box; }
+
     body {
       font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
       background-color: var(--bg-dark);
       background-image: radial-gradient(circle at 50% 0%, #241734 0%, #0d0b14 75%);
       color: var(--text-main);
-      max-width: 640px;
-      margin: 24px auto;
-      padding: 0 14px;
+      max-width: 1080px;
+      margin: 18px auto;
+      padding: 0 16px;
     }
 
     h1 {
       font-family: "Press Start 2P", ui-monospace, monospace;
       font-size: 18px;
-      line-height: 1.5;
+      line-height: 1.4;
       color: var(--accent-gold);
       text-shadow: 2px 2px 0px #5e1742, 0 0 10px rgba(255, 202, 40, 0.35);
-      margin: 0 0 14px;
-      letter-spacing: 0.5px;
+      margin: 0;
     }
 
-    .cartao, .painel {
+    .cartao-login {
+      max-width: 460px;
+      margin: 60px auto;
       background: var(--bg-panel);
       border: 2px solid var(--border-arcade);
       border-radius: 8px;
-      padding: 14px;
-      margin: 14px 0;
-      box-shadow: 0 4px 0 #07050a, inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 6px 0 #07050a;
+    }
+    .cartao-login h1 { margin-bottom: 18px; }
+
+    /* Topbar: Título, Jogador, Temporada e Botões de Ação */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--bg-panel);
+      border: 2px solid var(--border-arcade);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 0 #07050a;
+    }
+    .topbar-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .status-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .status-meta strong {
+      color: var(--accent-gold);
+      text-transform: uppercase;
     }
 
-    .painel p {
-      margin: 8px 0;
-      font-size: 14px;
+    /* HUD de Estatísticas em 4 Cards */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
     }
-
-    .painel strong {
+    @media (max-width: 780px) {
+      .hud-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .hud-card {
+      background: var(--bg-panel);
+      border: 2px solid var(--border-arcade);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 0 #07050a, inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .hud-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .hud-valor {
+      font-size: 18px;
+      font-weight: 700;
       color: var(--accent-gold);
     }
-
-    .painel small {
-      color: var(--text-muted);
+    .hud-sub {
       font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
     }
 
-    /* Barra de progresso estilo HUD Arcade */
     progress {
       appearance: none;
       -webkit-appearance: none;
-      width: 110px;
-      height: 12px;
-      vertical-align: middle;
-      margin-left: 6px;
+      width: 100%;
+      height: 10px;
+      margin-top: 6px;
       border: 2px solid var(--border-arcade);
       border-radius: 4px;
       background-color: #0b0912;
       overflow: hidden;
     }
-    progress::-webkit-progress-bar {
-      background-color: #0b0912;
-    }
-    progress::-webkit-progress-value {
-      background: linear-gradient(90deg, var(--accent-grape), var(--accent-gold));
-    }
-    progress::-moz-progress-bar {
-      background: linear-gradient(90deg, var(--accent-grape), var(--accent-gold));
-    }
+    progress::-webkit-progress-bar { background-color: #0b0912; }
+    progress::-webkit-progress-value { background: linear-gradient(90deg, var(--accent-grape), var(--accent-gold)); }
+    progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent-grape), var(--accent-gold)); }
 
     /* Botões estilo Fliperama 3D */
     button {
@@ -97,7 +144,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       padding: 10px 16px;
-      margin: 4px 8px 4px 0;
+      margin: 2px 4px;
       border-radius: 6px;
       border: 2px solid #d070ff;
       background: linear-gradient(180deg, #7b2cbf 0%, #4a1575 100%);
@@ -106,20 +153,24 @@
       box-shadow: 0 4px 0 #290942, 0 0 10px rgba(156, 77, 204, 0.3);
       transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
     }
-    button:hover {
-      filter: brightness(1.15);
-    }
+    button:hover { filter: brightness(1.15); }
     button:active {
       transform: translateY(3px);
       box-shadow: 0 1px 0 #290942;
+    }
+    button.btn-secundario {
+      padding: 6px 12px;
+      font-size: 11px;
+      background: #251d3a;
+      border-color: var(--border-arcade);
+      box-shadow: 0 2px 0 #07050a;
     }
 
     input[type="text"], input:not([type="checkbox"]) {
       font-family: "JetBrains Mono", ui-monospace, monospace;
       padding: 10px 12px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       width: 100%;
-      box-sizing: border-box;
       background: #0b0912;
       color: var(--text-main);
       border: 2px solid var(--border-arcade);
@@ -131,14 +182,15 @@
       box-shadow: 0 0 8px rgba(255, 202, 40, 0.25);
     }
 
-    /* Moldura do Jogo (Phaser) estilo monitor CRT / Arcade */
+    /* Palco Principal do Jogo (Grande na Tela) */
     #jogo {
-      margin: 14px 0;
+      margin: 0 0 12px;
       border: 3px solid var(--accent-grape);
       border-radius: 8px;
       overflow: hidden;
       line-height: 0;
-      box-shadow: 0 6px 0 #07050a, 0 0 18px rgba(156, 77, 204, 0.25);
+      background: #07050a;
+      box-shadow: 0 6px 0 #07050a, 0 0 22px rgba(156, 77, 204, 0.28);
     }
     #jogo canvas {
       width: 100% !important;
@@ -146,17 +198,19 @@
       image-rendering: pixelated;
     }
 
-    /* Lista de Avisos (Toast Log) */
+    /* Avisos em faixa horizontal abaixo do jogo */
     .avisos {
       list-style: none;
       padding: 0;
-      margin: 12px 0;
+      margin: 0 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .avisos li {
-      padding: 8px 12px;
-      margin: 6px 0;
+      padding: 7px 12px;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 12px;
       background: #1a2238;
       border-left: 4px solid var(--emit-blue);
       color: #d8e6ff;
@@ -172,30 +226,42 @@
       color: #ff8a80;
     }
 
-    /* Painel de Eventos estilo Terminal Arcade */
+    /* Painel de Eventos Minimizável */
     .eventos {
       border: 2px solid var(--border-arcade);
       border-radius: 8px;
-      padding: 12px;
-      margin: 14px 0;
+      padding: 12px 14px;
+      margin: 12px 0;
       background: #110d1b;
       box-shadow: 0 4px 0 #07050a;
     }
+    .eventos-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
     .eventos h2 {
       font-family: "Press Start 2P", ui-monospace, monospace;
-      margin: 0 0 10px;
+      margin: 0;
       font-size: 13px;
       color: var(--accent-gold);
     }
+    .eventos-corpo {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-arcade);
+    }
     .eventos .legenda {
       font-size: 12px;
-      margin: 6px 0 10px;
+      margin: 0 0 8px;
       color: var(--text-muted);
     }
     .eventos label {
       font-size: 12px;
-      display: block;
-      margin: 8px 0;
+      display: inline-block;
+      margin: 6px 0 8px;
       color: var(--text-muted);
       cursor: pointer;
     }
@@ -208,24 +274,19 @@
       list-style: none;
       padding: 0;
       margin: 0;
-      max-height: 280px;
+      max-height: 240px;
       overflow-y: auto;
-      font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
       font-size: 12px;
     }
     .eventos li {
       padding: 6px 10px;
-      margin: 5px 0;
+      margin: 4px 0;
       border-left: 4px solid #666;
       background: var(--bg-card);
       border-radius: 0 4px 4px 0;
     }
-    .eventos li.pedido {
-      border-color: var(--emit-blue);
-    }
-    .eventos li.fato {
-      border-color: var(--on-green);
-    }
+    .eventos li.pedido { border-color: var(--emit-blue); }
+    .eventos li.fato { border-color: var(--on-green); }
     .eventos li.recusa {
       border-color: var(--err-red);
       background: #28141e;
@@ -251,23 +312,14 @@
       display: inline-block;
       padding: 1px 6px;
       border-radius: 4px;
-      color: #0b0912;
       font-weight: 700;
       font-size: 11px;
       margin-right: 6px;
     }
-    .badge.emit {
-      background: var(--emit-blue);
-      color: #041e2e;
-    }
-    .badge.on {
-      background: var(--on-green);
-      color: #042412;
-    }
+    .badge.emit { background: var(--emit-blue); color: #041e2e; }
+    .badge.on { background: var(--on-green); color: #042412; }
 
-    .contadores {
-      margin: 8px 0;
-    }
+    .contadores { margin: 6px 0; }
     .chip {
       display: inline-block;
       background: #251d3a;
@@ -281,8 +333,8 @@
     }
 
     footer {
-      margin-top: 28px;
-      padding-top: 12px;
+      margin-top: 20px;
+      padding-top: 10px;
       border-top: 1px dashed var(--border-arcade);
       font-size: 12px;
       color: var(--text-muted);
@@ -294,62 +346,104 @@
 <div id="app">
 
   <!-- Tela de entrada -->
-  <section v-if="!conectado" class="cartao">
+  <section v-if="!conectado" class="cartao-login">
     <h1>🍇 Vinícola em Tempo Real</h1>
-    <input v-model="nome" placeholder="Seu nome">
-    <button @click="entrar('mestre')">Entrar como Mestre</button>
-    <button @click="entrar('jogador')">Entrar como Jogador</button>
+    <input v-model="nome" placeholder="Digite seu nome na safra">
+    <div>
+      <button @click="entrar('mestre')">👑 Entrar como Mestre</button>
+      <button @click="entrar('jogador')">👨‍🌾 Entrar como Jogador</button>
+    </div>
   </section>
 
-  <!-- Tela da vila -->
+  <!-- Tela principal da vinícola (Widescreen Arcade) -->
   <main v-else>
-    <h1>🍇 Vinícola</h1>
-    <p>{{ papel }}: <strong>{{ nome || "Anônimo" }}</strong> · Temporada: <strong>{{ estado.fase }}</strong></p>
+    <!-- Barra de Comando Superior: Identificação + Botões de Ação -->
+    <header class="topbar">
+      <div class="topbar-info">
+        <h1>🍇 Vinícola</h1>
+        <div class="status-meta">
+          {{ papel }}: <strong>{{ nome || "Anônimo" }}</strong> · Temporada: <strong>{{ estado.fase }}</strong>
+        </div>
+      </div>
 
-    <!-- A vila desenhada pelo Phaser aparece aqui -->
+      <div class="topbar-acoes">
+        <template v-if="papel === 'mestre'">
+          <button @click="abrirVila">☀️ Abrir temporada</button>
+          <button @click="encerrarVila">🌙 Encerrar temporada</button>
+        </template>
+        <button v-else @click="construir">
+          🔨 Construir Parreiral/Lagar/Adega (custo {{ estado.custo }} uvas)
+        </button>
+      </div>
+    </header>
+
+    <!-- HUD de Estatísticas em 4 Cards -->
+    <section class="hud-grid">
+      <div class="hud-card">
+        <span class="hud-label">🍇 Uvas (Primário)</span>
+        <span class="hud-valor">{{ estado.uvas }} <small>(+{{ porMinuto }}/min)</small></span>
+        <span class="hud-sub">Expira acima de 180 uvas</span>
+      </div>
+
+      <div class="hud-card">
+        <span class="hud-label">🍷 Vinho (Refinado)</span>
+        <span class="hud-valor">{{ estado.vinho }}</span>
+        <span class="hud-sub">Refinado nas adegas prontas</span>
+      </div>
+
+      <div class="hud-card">
+        <span class="hud-label">👨‍🌾 Vindimadores</span>
+        <span class="hud-valor">{{ estado.trabalhadores }} / {{ estado.limite }}</span>
+        <progress :value="estado.trabalhadores" :max="estado.limite"></progress>
+      </div>
+
+      <div class="hud-card">
+        <span class="hud-label">🏛️ Estruturas</span>
+        <span class="hud-valor">{{ estado.concluidas }} prontas</span>
+        <span class="hud-sub">{{ estado.em_obra }} em obra no momento</span>
+      </div>
+    </section>
+
+    <!-- A vila desenhada pelo Phaser (agora grande em destaque) -->
     <div id="jogo"></div>
 
-    <section class="painel">
-      <p>🍇 Uvas: <strong>{{ estado.uvas }}</strong> (+{{ porMinuto }}/min) <small>(expira acima de 180)</small></p>
-      <p>🍷 Vinho: <strong>{{ estado.vinho }}</strong> (refinado nas adegas)</p>
-      <p>👨‍🌾 Vindimadores: {{ estado.trabalhadores }}/{{ estado.limite }}
-        <progress :value="estado.trabalhadores" :max="estado.limite"></progress></p>
-      <p>🏛️ Construções (Parreiral / Lagar / Adega): {{ estado.concluidas }} concluídas, {{ estado.em_obra }} em obra</p>
-    </section>
-
-    <section>
-      <template v-if="papel === 'mestre'">
-        <button @click="abrirVila">Abrir temporada</button>
-        <button @click="encerrarVila">Encerrar temporada</button>
-      </template>
-      <button v-else @click="construir">🔨 Construir Parreiral/Lagar/Adega (custo {{ estado.custo }} uvas)</button>
-    </section>
-
-    <ul class="avisos">
+    <!-- Avisos em tempo real logo abaixo do canvas -->
+    <ul class="avisos" v-if="avisos.length">
       <li v-for="a in avisos" :class="a.tipo">{{ a.texto }}</li>
     </ul>
 
-    <!-- PAINEL DE EVENTOS: mostra o paradigma funcionando (emit, on, causa e reação) -->
+    <!-- PAINEL DE EVENTOS MINIMIZÁVEL: mostra o paradigma funcionando (emit, on, causa e reação) -->
     <section class="eventos">
-      <h2>📡 Painel de eventos</h2>
-      <p class="legenda">
-        <span class="badge emit">⬆ emit</span> este cliente PEDIU algo ao servidor ·
-        <span class="badge on">⬇ on</span> este cliente ESCUTOU um evento e reagiu
-      </p>
-      <div class="contadores">
-        <span v-for="(n, nome) in contadores" :key="nome" class="chip">{{ nome }} ×{{ n }}</span>
+      <div class="eventos-header" @click="painelMinimizado = !painelMinimizado">
+        <h2>📡 Painel de eventos ({{ eventosVisiveis.length }})</h2>
+        <button type="button" class="btn-secundario" @click.stop="painelMinimizado = !painelMinimizado">
+          {{ painelMinimizado ? "▲ Expandir Painel" : "▼ Minimizar Painel" }}
+        </button>
       </div>
-      <label><input type="checkbox" v-model="ocultarProducao"> ocultar recurso.produzido (é muito frequente)</label>
-      <ul>
-        <li v-for="e in eventosVisiveis" :class="e.tipo">
-          <span class="badge" :class="e.sentido === 'enviado' ? 'emit' : 'on'">{{ e.sentido === 'enviado' ? '⬆ emit' : '⬇ on' }}</span>
-          <strong>{{ e.nome }}</strong> <span class="hora">{{ e.hora }}</span>
-          <div v-if="e.causa" class="causa">causa: {{ e.causa }}</div>
-          <div v-if="e.dados" class="dados">dados: {{ e.dados }}</div>
-          <div v-if="e.reacao" class="reacao">↪ reação: {{ e.reacao }}</div>
-        </li>
-      </ul>
-      <p v-if="!eventosVisiveis.length" class="vazio">Nenhum evento ainda. Faça uma ação.</p>
+
+      <div class="eventos-corpo" v-show="!painelMinimizado">
+        <p class="legenda">
+          <span class="badge emit">⬆ emit</span> este cliente PEDIU algo ao servidor ·
+          <span class="badge on">⬇ on</span> este cliente ESCUTOU um evento e reagiu
+        </p>
+
+        <div class="contadores">
+          <span v-for="(n, nome) in contadores" :key="nome" class="chip">{{ nome }} ×{{ n }}</span>
+        </div>
+
+        <label><input type="checkbox" v-model="ocultarProducao"> ocultar recurso.produzido (é muito frequente)</label>
+
+        <ul>
+          <li v-for="e in eventosVisiveis" :class="e.tipo">
+            <span class="badge" :class="e.sentido === 'enviado' ? 'emit' : 'on'">{{ e.sentido === 'enviado' ? '⬆ emit' : '⬇ on' }}</span>
+            <strong>{{ e.nome }}</strong> <span class="hora">{{ e.hora }}</span>
+            <div v-if="e.causa" class="causa">causa: {{ e.causa }}</div>
+            <div v-if="e.dados" class="dados">dados: {{ e.dados }}</div>
+            <div v-if="e.reacao" class="reacao">↪ reação: {{ e.reacao }}</div>
+          </li>
+        </ul>
+        <p v-if="!eventosVisiveis.length" class="vazio">Nenhum evento ainda. Faça uma ação.</p>
+      </div>
     </section>
   </main>
 
@@ -515,6 +609,7 @@
       const eventos = ref([]);              // linha do tempo do painel de eventos
       const contadores = reactive({});      // quantas vezes cada evento ocorreu
       const ocultarProducao = ref(false);
+      const painelMinimizado = ref(false); // Inicia aberto para avaliação e pode ser minimizado
       const eventosVisiveis = computed(() =>
         eventos.value.filter((e) => !(ocultarProducao.value && e.nome === "recurso.produzido")));
       const jogo = criarJogo();      // a vila desenhada (Phaser)
@@ -640,7 +735,7 @@
         pedir("vila.encerramento_solicitado");
       }
 
-      return { nome, papel, conectado, estado, avisos, eventosVisiveis, contadores, ocultarProducao, porMinuto,
+      return { nome, papel, conectado, estado, avisos, eventosVisiveis, contadores, ocultarProducao, painelMinimizado, porMinuto,
                entrar, abrirVila, construir, encerrarVila };
     }
   }).mount("#app");
