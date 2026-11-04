@@ -11,13 +11,12 @@ app = socketio.ASGIApp(sio, static_files={
 
 # A partir da Etapa 1, adicione o seu código ABAIXO desta linha.
 
-CUSTO = 50           # uvas necessárias por construção (Parreiral, Lagar ou Adega)
+CUSTO = 50           # uvas necessárias por construção de Vinícola
 TEMPO_OBRA = 8       # segundos até a obra terminar
 INTERVALO = 5        # segundos entre cada colheita de uvas e refino de vinho
 INTERVALO_EXPIRA = 15 # segundos entre verificações de uva passando do ponto
 LIMITE_PERECIVEL = 180 # acima deste estoque, parte das uvas passa do ponto
 PERDA_EXPIRACAO = 20   # quantidade de uvas perdidas quando passam do ponto
-TIPOS_CONSTRUCAO = ["Parreiral", "Lagar", "Adega"]
 
 estado = {
     "fase": "aguardando",   # aguardando -> aberta -> encerrada
@@ -146,8 +145,7 @@ async def construir(sid, dados=None):
         await recusar(sid, motivo, pedido)
         return
 
-    indice_obra = estado["concluidas"] + estado["em_obra"]
-    estrutura = TIPOS_CONSTRUCAO[indice_obra % len(TIPOS_CONSTRUCAO)]
+    estrutura = "Vinícola"
 
     estado["uvas"] -= CUSTO
     estado["trabalhadores"] += 1

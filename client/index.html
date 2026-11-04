@@ -380,7 +380,7 @@
           <button @click="encerrarVila">🌙 Encerrar temporada</button>
         </template>
         <button v-else @click="construir">
-          🔨 Construir Parreiral/Lagar/Adega (custo {{ estado.custo }} uvas)
+          🔨 Construir Vinícola (custo {{ estado.custo }} uvas)
         </button>
       </div>
     </header>
@@ -396,7 +396,7 @@
       <div class="hud-card">
         <span class="hud-label">🍷 Vinho (Refinado)</span>
         <span class="hud-valor">{{ estado.vinho }}</span>
-        <span class="hud-sub">Refinado nas adegas prontas</span>
+        <span class="hud-sub">Refinado nas vinícolas prontas</span>
       </div>
 
       <div class="hud-card">
@@ -406,7 +406,7 @@
       </div>
 
       <div class="hud-card">
-        <span class="hud-label">🏛️ Estruturas</span>
+        <span class="hud-label">🏡 Vinícolas</span>
         <span class="hud-valor">{{ estado.concluidas }} prontas</span>
         <span class="hud-sub">{{ estado.em_obra }} em obra no momento</span>
       </div>
@@ -480,8 +480,9 @@
 
       preload() {
         this.load.image("tiles", "assets/tileset-vila.png");                 // peças do cenário
-        this.load.spritesheet("sprites", "assets/sprites-vila.png",          // casa e canteiro
+        this.load.spritesheet("sprites", "assets/sprites-vila.png",          // vinícola e canteiro
           { frameWidth: 32, frameHeight: 32 });
+        this.load.image("lagar", "assets/lagar.png");                        // tanque de madeira (lagar)
         this.load.tilemapTiledJSON("mapa", "assets/vila.json");              // o mapa
       }
 
@@ -505,29 +506,211 @@
 
         this.obras = [];      // obras em andamento (a primeira a começar é a primeira a terminar)
         this.usados = 0;      // quantos lotes já foram usados
+        this.estruturas = []; // estruturas prontas [{ x, y, tipo }]
+        this.temporadaAberta = false;
+
         this.faixa = this.add.text(this.larg / 2, 9, "⏳ Aguardando o Mestre", {
           fontSize: "8px", color: "#ffffff", backgroundColor: "#00000099",
           padding: { x: 5, y: 2 }, resolution: 2,
         }).setOrigin(0.5).setDepth(10);
 
+        // 4) Estações do fluxo produtivo: Parreira -> Lagar -> Vinícola
+        this.criarEstacoesFluxo();
+
+        // Ciclo visual contínuo de colheita enquanto a temporada estiver aberta
+        this.time.addEvent({
+          delay: 2600,
+          loop: true,
+          callback: () => {
+            if (this.temporadaAberta) {
+              this.animarFluxoColheita(false);
+            }
+          },
+        });
+
         cena = this;
         fila.splice(0).forEach(([nome, args]) => this[nome](...args));
+      }
+
+      // ----- Estações visuais e animação: Parreiral (canto sup. direito) -> Lagar -> Vinícolas construídas -----
+      criarEstacoesFluxo() {
+        // O Parreiral já existe no mapa no canto superior direito (x: 224..288, y: 0..32)
+        this.pontoParreiral = { x: 256, y: 18 };
+        this.pontosParreiral = [
+          { x: 236, y: 16 },
+          { x: 256, y: 20 },
+          { x: 274, y: 16 },
+        ];
+
+        // O Lagar é um grande tanque de madeira no chão onde as uvas são pisadas/prensadas
+        this.pontoLagar = { x: 144, y: 106 };
+        this.lagarSprite = this.add.image(this.pontoLagar.x, this.pontoLagar.y, "lagar").setDepth(3);
+      }
+
+      obterVinicolaConstruida() {
+        if (!this.estruturas.length) return null;
+        this.indiceVinicolaFluxo = ((this.indiceVinicolaFluxo || 0) + 1) % this.estruturas.length;
+        return this.estruturas[this.indiceVinicolaFluxo];
+      }
+
+      criarParticulasUva(x, y, cor = 0x9c27b0, qtd = 5) {
+        for (let i = 0; i < qtd; i++) {
+          const gota = this.add.circle(x, y, 2, cor).setDepth(7);
+          const ang = (Math.PI * 2 * i) / qtd + (Math.random() * 0.5 - 0.25);
+          const dist = 6 + Math.random() * 8;
+          this.tweens.add({
+            targets: gota,
+            x: x + Math.cos(ang) * dist,
+            y: y + Math.sin(ang) * dist - 3,
+            alpha: 0,
+            scale: 0.3,
+            duration: 420,
+            ease: "Quad.easeOut",
+            onComplete: () => gota.destroy(),
+          });
+        }
+      }
+
+      animarVooArco(objeto, origem, destino, alturaArco, duracao, aoTerminar) {
+        const estadoTween = { t: 0 };
+        const meioX = (origem.x + destino.x) / 2;
+        const meioY = Math.min(origem.y, destino.y) - alturaArco;
+
+        this.tweens.add({
+          targets: estadoTween,
+          t: 1,
+          duration: duracao,
+          ease: "Sine.easeInOut",
+          onUpdate: () => {
+            const t = estadoTween.t;
+            const u = 1 - t;
+            // Curva de Bézier quadrática (arco de transporte)
+            objeto.x = u * u * origem.x + 2 * u * t * meioX + t * t * destino.x;
+            objeto.y = u * u * origem.y + 2 * u * t * meioY + t * t * destino.y;
+          },
+          onComplete: () => {
+            if (aoTerminar) aoTerminar();
+          },
+        });
+      }
+
+      animarFluxoColheita(comBonusColheita = true, qtdProduzida = 0) {
+        const lagar = this.pontoLagar;
+        this.criarParticulasUva(this.pontoParreiral.x, this.pontoParreiral.y, 0x66bb6a, 4);
+
+        if (comBonusColheita && qtdProduzida > 0) {
+          this.flutuar("+" + qtdProduzida + " 🍇", this.pontoParreiral.x, this.pontoParreiral.y + 8, "#1b5e20");
+        }
+
+        // Dispara cachos saindo do Parreiral no canto superior direito rumo ao Lagar
+        [0, 220].forEach((atraso, indice) => {
+          this.time.delayedCall(atraso, () => {
+            const origemParreira = this.pontosParreiral[
+              ((this.cicloUva = (this.cicloUva || 0) + 1) + indice) % this.pontosParreiral.length
+            ];
+            const uva = this.add.text(origemParreira.x, origemParreira.y, "🍇", {
+              fontSize: "9px", resolution: 2,
+            }).setOrigin(0.5).setDepth(9);
+
+            // Rastro suave durante o transporte
+            const timerRastro = this.time.addEvent({
+              delay: 90,
+              loop: true,
+              callback: () => {
+                if (!uva.active) return;
+                const p = this.add.circle(uva.x, uva.y, 1.5, 0xab47bc, 0.75).setDepth(6);
+                this.tweens.add({
+                  targets: p, alpha: 0, scale: 0.2, duration: 280,
+                  onComplete: () => p.destroy(),
+                });
+              },
+            });
+
+            // 1) Trajeto: Parreiral (canto superior direito) -> Lagar (tanque de madeira no chão)
+            this.animarVooArco(uva, origemParreira, lagar, 24 + indice * 6, 850, () => {
+              // Chegou no Lagar: efeito de pisa/prensa das uvas no tanque de madeira!
+              this.criarParticulasUva(lagar.x, lagar.y - 2, 0x8e24aa, 6);
+              this.tweens.add({
+                targets: this.lagarSprite,
+                scaleX: 1.15,
+                scaleY: 0.86,
+                duration: 130,
+                yoyo: true,
+              });
+
+              const vinicolaAlvo = this.obterVinicolaConstruida();
+              if (!vinicolaAlvo) {
+                // Ainda não há Vinícola construída: o fluxo termina no Lagar
+                this.tweens.add({
+                  targets: uva,
+                  scaleX: 1.3,
+                  scaleY: 0.5,
+                  alpha: 0,
+                  duration: 200,
+                  onComplete: () => {
+                    timerRastro.remove(false);
+                    uva.destroy();
+                  },
+                });
+                return;
+              }
+
+              // 2) Se já houver Vinícola construída, o mosto segue do Lagar -> Vinícola construída
+              this.tweens.add({
+                targets: uva,
+                scaleX: 1.35,
+                scaleY: 0.65,
+                duration: 160,
+                yoyo: true,
+                onComplete: () => {
+                  this.animarVooArco(uva, lagar, vinicolaAlvo, 22 + indice * 5, 780, () => {
+                    timerRastro.remove(false);
+                    uva.destroy();
+                    this.criarParticulasUva(vinicolaAlvo.x, vinicolaAlvo.y, 0xb71c1c, 6);
+
+                    // Pulso na Vinícola construída ao receber o mosto do lagar
+                    this.tweens.add({
+                      targets: vinicolaAlvo.sprite,
+                      scale: 1.15,
+                      duration: 150,
+                      yoyo: true,
+                    });
+
+                    if (indice === 0) {
+                      const taca = this.add.text(vinicolaAlvo.x, vinicolaAlvo.y - 10, "🍷", {
+                        fontSize: "9px", resolution: 2,
+                      }).setOrigin(0.5).setDepth(9);
+                      this.tweens.add({
+                        targets: taca,
+                        y: vinicolaAlvo.y - 24,
+                        alpha: 0,
+                        duration: 900,
+                        onComplete: () => taca.destroy(),
+                      });
+                    }
+                  });
+                },
+              });
+            });
+          });
+        });
       }
 
       // ----- apoio -----
       lote(i) { return this.lotes[i % this.lotes.length]; }
       criarCasa(x, y) {
-        const casa = this.add.sprite(x, y, "sprites", 0);
+        const casa = this.add.sprite(x, y, "sprites", 0).setDepth(3);
         this.tweens.add({ targets: casa, scale: { from: 0.3, to: 1 }, duration: 400, ease: "Back.Out" });
+        this.estruturas.push({ x, y, tipo: "Vinícola", sprite: casa });
       }
       criarObra(duracao) {
         const { x, y } = this.lote(this.usados++);
-        const canteiro = this.add.sprite(x, y, "sprites", 1);
-        const fundo = this.add.rectangle(x - 10, y + 16, 20, 3, 0x333333).setOrigin(0, 0.5);
-        const barra = this.add.rectangle(x - 10, y + 16, 20, 3, 0xffd54a).setOrigin(0, 0.5);
+        const canteiro = this.add.sprite(x, y, "sprites", 1).setDepth(3);
+        const fundo = this.add.rectangle(x - 10, y + 16, 20, 3, 0x333333).setOrigin(0, 0.5).setDepth(4);
+        const barra = this.add.rectangle(x - 10, y + 16, 20, 3, 0xffd54a).setOrigin(0, 0.5).setDepth(4);
         barra.scaleX = 0;
         this.tweens.add({ targets: barra, scaleX: 1, duration: duracao });
-        this.obras.push({ canteiro, fundo, barra, x, y });
+        this.obras.push({ canteiro, fundo, barra, x, y, tipo: "Vinícola" });
       }
       flutuar(texto, x, y, cor) {
         const t = this.add.text(x, y, texto, {
@@ -548,33 +731,37 @@
         if (estado.fase === "encerrada") this.vilaEncerrada();
       }
       vilaIniciada() {                        // vila.iniciada
+        this.temporadaAberta = true;
         this.faixa.setText("☀️ Temporada aberta");
+        this.animarFluxoColheita(false);
       }
       obraIniciada(estado) {                  // construcao.iniciada
         this.criarObra(estado.tempo_obra * 1000);
-        this.flutuar("-" + estado.custo + " 🍇", this.acampamento.x, this.acampamento.y, "#b00020");
+        this.flutuar("-" + estado.custo + " 🍇", this.pontoLagar.x, this.pontoLagar.y - 12, "#b00020");
       }
       obraConcluida(estado) {                 // construcao.concluida
         const obra = this.obras.shift();
         if (!obra) return;
         obra.canteiro.destroy(); obra.fundo.destroy(); obra.barra.destroy();
         this.criarCasa(obra.x, obra.y);
-        this.flutuar("🍷 Estrutura pronta!", obra.x, obra.y - 18, "#1b5e20");
+        this.flutuar("🍷 Vinícola pronta!", obra.x, obra.y - 18, "#1b5e20");
       }
       recursoProduzido(estado) {              // recurso.produzido
-        this.flutuar("+" + estado.producao + " 🍇", this.acampamento.x, this.acampamento.y, "#1b5e20");
+        this.animarFluxoColheita(true, estado.producao);
       }
       vinhoProduzido(gerado) {                // vinho.produzido
-        this.flutuar("+" + gerado + " 🍷", this.acampamento.x, this.acampamento.y - 12, "#6a1b9a");
+        const alvo = this.estruturas[this.estruturas.length - 1] || this.pontoLagar;
+        this.flutuar("+" + gerado + " 🍷", alvo.x, alvo.y - 16, "#6a1b9a");
       }
       uvaExpirada(perdidas) {                 // uva.expirada
-        this.flutuar("-" + perdidas + " 🍇 (passou do ponto)", this.acampamento.x, this.acampamento.y, "#c62828");
+        this.flutuar("-" + perdidas + " 🍇 (passou do ponto)", this.pontoLagar.x, this.pontoLagar.y - 12, "#c62828");
       }
       recusado(motivo) {                      // operacao.recusada (só quem pediu)
         this.cameras.main.shake(180, 0.006);
         this.flutuar("✋ " + motivo, this.larg / 2, this.alt - 28, "#b00020");
       }
       vilaEncerrada() {                       // vila.encerrada
+        this.temporadaAberta = false;
         this.faixa.setText("🌙 Temporada encerrada");
         this.add.rectangle(this.larg / 2, this.alt / 2, this.larg, this.alt, 0x000033, 0.35).setDepth(5);
       }
